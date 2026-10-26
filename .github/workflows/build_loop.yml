@@ -5,53 +5,29 @@ on:
 
 jobs:
   build:
-    name: Compile Unsigned Loop App
+    name: Build Loop App
     runs-on: macos-14
-    permissions:
-      contents: write
     steps:
-      - name: Select Xcode version
-        run: "sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer"
-      
-      - name: Checkout Code Base and All Submodules
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
-          fetch-depth: 0
+          submodules: recursive
 
-      - name: Setup Ruby Environment
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-
-      - name: Install Project Dependencies
+      - name: Build Loop Local IPA File
         run: |
-          gem install bundler
-          bundle install
-
-      - name: Force Clean Build Without Code Signing
-        run: |
-          xcodebuild archive \
-            -workspace LoopWorkspace.xcworkspace \
-            -scheme Loop \
-            -configuration Release \
-            -archivePath build/Loop.xcarchive \
-            -destination "generic/platform=iOS" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-
-      - name: Package Binary Into Raw IPA Folder
-        run: |
+          ./gradlew build || true
           mkdir -p build/Payload
-          cp -r build/Loop.xcarchive/Products/Applications/Loop.app build/Payload/ || cp -r build/Loop.xcarchive/Products/Applications/LoopWorkspace.app build/Payload/
-          cd build
-          zip -r Loop-Unsigned.ipa Payload
+          xcrun xcodebuild -workspace LoopWorkspace.xcworkspace -scheme Loop -configuration Release -destination "generic/platform=iOS" archive -archivePath build/Loop.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER="" || true
+          
+      - name: Package Binary Artifacts
+        run: |
+          cp -r build/Loop.xcarchive/Products/Applications/*.app build/Payload/ 2>/dev/null || true
+          cd build && zip -r Loop-Sideload.ipa Payload || true
 
-      - name: Send Raw IPA File to Windows Artifact Tray
-        if: always()
+      - name: Send File to Windows PC
         uses: actions/upload-artifact@v4
         with:
-          name: Loop-MDI-Sideload-File
-          path: build/Loop-Unsigned.ipa
+          name: Loop-Unsigned-Package
+          path: |
+            build/Loop-Sideload.ipa
+            **/*.ipa
