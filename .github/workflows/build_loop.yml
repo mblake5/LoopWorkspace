@@ -32,7 +32,7 @@ jobs:
       - name: Force Clean Build Without Code Signing
         run: |
           xcodebuild archive \
-            -workspace LoopWorkspace/Loop.xcworkspace \
+            -workspace LoopWorkspace.xcworkspace \
             -scheme Loop \
             -configuration Release \
             -archivePath build/Loop.xcarchive \
@@ -45,7 +45,7 @@ jobs:
       - name: Package Binary Into Raw IPA Folder
         run: |
           mkdir -p build/Payload
-          cp -r build/Loop.xcarchive/Products/Applications/Loop.app build/Payload/
+          cp -r build/Loop.xcarchive/Products/Applications/Loop.app build/Payload/ || cp -r build/Loop.xcarchive/Products/Applications/LoopWorkspace.app build/Payload/
           cd build
           zip -r Loop-Unsigned.ipa Payload
 
