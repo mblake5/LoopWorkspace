@@ -13,16 +13,16 @@ jobs:
       - name: Select Xcode version
         run: "sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer"
       
-      - name: Checkout Loop Workspace Code
+      - name: Checkout Code Base and All Submodules
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: 'recursive'
+          fetch-depth: 0
 
       - name: Setup Ruby Environment
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
-          bundle-cache: true
 
       - name: Install Project Dependencies
         run: |
@@ -32,10 +32,11 @@ jobs:
       - name: Force Clean Build Without Code Signing
         run: |
           xcodebuild archive \
-            -workspace Loop.xcworkspace \
+            -workspace LoopWorkspace/Loop.xcworkspace \
             -scheme Loop \
             -configuration Release \
             -archivePath build/Loop.xcarchive \
+            -destination "generic/platform=iOS" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
